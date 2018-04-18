@@ -1,5 +1,5 @@
 glmm <-
-function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, doPQL=TRUE, debug=FALSE,p1=1/3,p2=1/3,p3=1/3,rmax=1000,iterlim=1000,par.init=NULL,zeta=5)
+function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weights, doPQL=TRUE, debug=FALSE,p1=1/3,p2=1/3,p3=1/3,rmax=1000,iterlim=1000,par.init=NULL,zeta=5)
 	{
 	if(missing(varcomps.names)) stop("Names for the variance components must be supplied through varcomps.names")
 	if(is.vector(varcomps.names)!=1) stop("varcomps.names must be a vector")
@@ -143,9 +143,38 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, doPQL
 		z[[i]]<-do.call(cbind,thesemats)
 	}
 	names(z)<-varcomps.names
-
-	mod.mcml<-list(x = x, z=z, y = y, ntrials = ntrials)
-
+	
+	#we need to detect if weights vector is there and if it isn't we need to declare weights vector of proper length and all 1's
+	
+	w <- vector()
+	mod.mcml<-list(x = x, z=z, y = y, w = weights, ntrials = ntrials)
+	#Start weighting stuff
+	
+	#avoids problems with 1D matrix
+	w <- as.vector(mod.mcml$w)
+	
+	if(!is.null(w) && !is.numeric(w)){
+	  
+	  stop("'weights' must be a numeric vector")}
+	n <- length(x)
+	if (length(y) != n | length(w) != n | length(z) != n){
+	  
+	  stop("incompatible dimensions")}
+	
+	if (any(w < 0 | is.na(w) | is.null(w))){
+	  
+	  stop("missing negative or null weights not allowed")}
+	
+	#Deal with weights of zero
+	wts <- sqrt(w)
+	#return w at end
+	save.y <- y
+	save.x <- x
+	save.z <- z
+	#return saves at the end
+	y <- y*wts
+	x <- x*wts
+	z <- z*wts
 	
 	#so now the 3 items are x (matrix), z (list), y (vector)
 	#end figuring out how to interpret the formula

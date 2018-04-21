@@ -122,6 +122,7 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
 	#check p1 p2 p3
 	if(!is.numeric(p1))stop("p1 must be a number between 0 and 1")
 	if(p1>1) stop("p1 must be a number between 0 and 1")
+
 	if(p1<0) stop("p1 must be a number between 0 and 1")
 	if(p1==0) stop("p1 must be nonzero")
 	if(!is.numeric(p2))stop("p2 must be a number between 0 and 1")
@@ -144,9 +145,13 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
 	}
 	names(z)<-varcomps.names
 	
-	#we need to detect if weights vector is there and if it isn't we need to declare weights vector of proper length and all 1's
+	#we need to detect if weights vector is there and if it isn't we need to declare weights vector of proper length and all 1's - added
 	
 	w <- vector()
+	if(missing(weights)){
+	weights <- rep(1,length(y))
+	}
+	
 	mod.mcml<-list(x = x, z=z, y = y, w = weights, ntrials = ntrials)
 	#Start weighting stuff
 	
@@ -170,6 +175,7 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
 	#return w at end
 	save.y <- y
 	save.x <- x
+	# the returned z at the bottom is z = random do we need to retain the z here?
 	save.z <- z
 	#return saves at the end
 	y <- y*wts

@@ -171,7 +171,7 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
 	  
 	  stop("missing negative or null weights not allowed")}
 	
-	#Deal with weights of zero - this works for a vector and a matrix - need to figure it out for a list
+	#Deal with weights of zero - this works for a vector and a matrix - still need to figure it out for the list
 	zero.weights <- any(w == 0)
 	
 	ny <- NCOL(y)

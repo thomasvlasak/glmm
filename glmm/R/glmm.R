@@ -138,6 +138,7 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
 	#Now z is a list with the number of design mats = number of distinct variance components
 	z<-list()
 	for(i in 1:length(levs)){
+
 		if(levs[i]!=i) stop("The numbers in the vector varcomps.equal must be consecutive. You must start at 1 and then each entry must be the next consecutive number or a repeat of a previous number.")
 		these<-varcomps.equal==i
 		thesemats<-random[these]
@@ -170,7 +171,30 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
 	  
 	  stop("missing negative or null weights not allowed")}
 	
-	#Deal with weights of zero
+	#Deal with weights of zero - this works for a vector and a matrix - need to figure it out for a list
+	zero.weights <- any(w == 0)
+	
+	ny <- NCOL(y)
+	if (zero.weights) {
+  
+  	save.r <- y
+  
+  	save.f <- y
+  
+  	save.w <- w
+  
+  	ok <- w != 0
+  
+  	nok <- !ok
+  
+  	w <- w[ok]
+  
+  	x0 <- x[!ok, , drop = FALSE]
+  	x <- x[ok,  , drop = FALSE]
+  
+  	y0 <- if (ny > 1L) y[!ok, , drop = FALSE] else y[!ok]
+  	y  <- if (ny > 1L) y[ ok, , drop = FALSE] else y[ok]
+	}
 	wts <- sqrt(w)
 	#return w at end
 	save.y <- y

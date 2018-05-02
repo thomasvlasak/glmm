@@ -153,17 +153,17 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
 	weights <- rep(1,length(y))
 	}
 	
-	mod.mcml<-list(x = x, z=z, y = y, w = weights, ntrials = ntrials)
+	mod.mcml<-list(x = x, z=z, y = y, ntrials = ntrials)
 	#Start weighting stuff
 	
 	#avoids problems with 1D matrix
-	w <- as.vector(mod.mcml$w)
+	w <- as.vector(weights)
 	
 	if(!is.null(w) && !is.numeric(w)){
 	  
 	  stop("'weights' must be a numeric vector")}
-	n <- length(x)
-	if (length(y) != n | length(w) != n | length(z) != n){
+	n <- length(y)
+	if (length(w) != n){
 	  
 	  stop("incompatible dimensions")}
 	
@@ -199,8 +199,7 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
 	#return w at end
 	save.y <- y
 	save.x <- x
-	# the returned z at the bottom is z = random do we need to retain the z here?
-	save.z <- z
+		
 	#return saves at the end
 	y <- y*wts
 	x <- x*wts

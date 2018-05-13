@@ -1,5 +1,4 @@
-glmm <-
-function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weights, doPQL=TRUE, debug=FALSE,p1=1/3,p2=1/3,p3=1/3,rmax=1000,iterlim=1000,par.init=NULL,zeta=5)
+glmm <-function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weights, doPQL=TRUE, debug=FALSE,p1=1/3,p2=1/3,p3=1/3,rmax=1000,iterlim=1000,par.init=NULL,zeta=5)
 	{
 	if(missing(varcomps.names)) stop("Names for the variance components must be supplied through varcomps.names")
 	if(is.vector(varcomps.names)!=1) stop("varcomps.names must be a vector")
@@ -16,10 +15,10 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
         stopifnot(inherits(data, "data.frame"))
         barf <- lm(fixed, data = data, method = "model.frame")
     }
+	
     x <- model.matrix(fixed, data = barf)
     y <- model.response(barf)
-
-
+    
 	#family stuff
 	family.glmm<-getFamily(family.glmm)
 
@@ -122,7 +121,6 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
 	#check p1 p2 p3
 	if(!is.numeric(p1))stop("p1 must be a number between 0 and 1")
 	if(p1>1) stop("p1 must be a number between 0 and 1")
-
 	if(p1<0) stop("p1 must be a number between 0 and 1")
 	if(p1==0) stop("p1 must be nonzero")
 	if(!is.numeric(p2))stop("p2 must be a number between 0 and 1")
@@ -136,75 +134,73 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
 	#this loop is a 2-4-1. We want to check that they're filling in varcomps.equal correctly. 
 	#We also want to group all the design matrices that share a variance components.
 	#Now z is a list with the number of design mats = number of distinct variance components
+	
 	z<-list()
 	for(i in 1:length(levs)){
-
 		if(levs[i]!=i) stop("The numbers in the vector varcomps.equal must be consecutive. You must start at 1 and then each entry must be the next consecutive number or a repeat of a previous number.")
 		these<-varcomps.equal==i
 		thesemats<-random[these]
 		z[[i]]<-do.call(cbind,thesemats)
 	}
 	names(z)<-varcomps.names
-	
-	#we need to detect if weights vector is there and if it isn't we need to declare weights vector of proper length and all 1's - added
-	
+
+	#mod.mcml<-list(x = x, z=z, y = y, ntrials = ntrials)
+
 	w <- vector()
 	if(missing(weights)){
-	weights <- rep(1,length(y))
+	  weights <- rep(1,length(y))
 	}
 	
-	mod.mcml<-list(x = x, z=z, y = y, ntrials = ntrials)
-	#Start weighting stuff
 	
 	#avoids problems with 1D matrix
 	w <- as.vector(weights)
 	
 	if(!is.null(w) && !is.numeric(w)){
-	  
 	  stop("'weights' must be a numeric vector")}
 	n <- length(y)
-	if (length(w) != n){
-	  
+	
+	if (length(w) != n ){
 	  stop("incompatible dimensions")}
 	
+	
 	if (any(w < 0 | is.na(w) | is.null(w))){
-	  
 	  stop("missing negative or null weights not allowed")}
 	
-	#Deal with weights of zero - this works for a vector and a matrix - still need to figure it out for the list
+	#Deal with weights of zero - this works for a vector and a matrix
 	zero.weights <- any(w == 0)
+	
+	save.x <- x
+	save.w <- w
+	save.y <- y
 	
 	ny <- NCOL(y)
 	if (zero.weights) {
-  
-  	save.r <- y
-  
-  	save.f <- y
-  
-  	save.w <- w
-  
-  	ok <- w != 0
-  
-  	nok <- !ok
-  
-  	w <- w[ok]
-  
-  	x0 <- x[!ok, , drop = FALSE]
-  	x <- x[ok,  , drop = FALSE]
-  
-  	y0 <- if (ny > 1L) y[!ok, , drop = FALSE] else y[!ok]
-  	y  <- if (ny > 1L) y[ ok, , drop = FALSE] else y[ok]
+	  
+	  ok <- w != 0
+	  nok <- !ok
+	  
+	  w <- w[ok]
+	  
+	  x0 <- x[!ok, , drop = FALSE]
+	  x <- x[ok,  , drop = FALSE]
+	  
+	  y0 <- if (ny > 1L) y[!ok, , drop = FALSE] else y[!ok]
+	  y  <- if (ny > 1L) y[ ok, , drop = FALSE] else y[ok]
 	}
+
 	wts <- sqrt(w)
-	#return w at end
-	save.y <- y
-	save.x <- x
-		
-	#return saves at the end
+	
 	y <- y*wts
 	x <- x*wts
-	z <- z*wts
+
+	for(i in 1:length(levs)){
+	  if(levs[i]!=i) stop("The numbers in the vector varcomps.equal must be consecutive. You must start at 1 and then each entry must be the next consecutive number or a repeat of a previous number.")
+	  these<-varcomps.equal==i
+	  thesemats<-random[these]
+	  z[[i]]<-do.call(cbind,thesemats)*wts[i]
+	}
 	
+	mod.mcml <- list(x = x, z = z, y = y, ntrials = ntrials)
 	#so now the 3 items are x (matrix), z (list), y (vector)
 	#end figuring out how to interpret the formula
 
@@ -346,7 +342,7 @@ function(fixed,random, varcomps.names,data, family.glmm, m,varcomps.equal, weigh
 
 	return(structure(list(beta=beta.trust,nu=nu.trust, likelihood.value=trust.out$value, likelihood.gradient=trust.out$gradient, likelihood.hessian=trust.out$hessian,
 	trust.converged=trust.out$converged,  mod.mcml=mod.mcml,
-	 fixedcall=fixed,randcall=randcall, x=x,y=y, z=random,
+	 fixedcall=fixed,randcall=randcall, x=save.x,y=save.y, z=random, weights=save.w,
 	family.glmm=family.glmm, call=call, varcomps.names=varcomps.names, 
 	varcomps.equal=varcomps.equal, umat=umat, pvec=c(p1, p2, p3), beta.pql=beta.pql, nu.pql=nu.pql, u.pql=u.star, zeta=zeta, debug=debug), class="glmm"))
 }
